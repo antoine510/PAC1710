@@ -5,11 +5,16 @@
 ###################################################################
 PAC1710	KEYWORD1
 SenseScale KEYWORD1
+Averaging KEYWORD1
+ReadSchedule KEYWORD1
 
 ###################################################################
 # Methods and Functions PAC1710
 ###################################################################
-Init	KEYWORD2
-GetPower	KEYWORD2
-GetCurrent	KEYWORD2
-GetVoltage	KEYWORD2
+Init				KEYWORD2
+SetSamplingTimesMs	KEYWORD2
+SetAveraging		KEYWORD2
+ReadOnce			KEYWORD2
+GetPower			KEYWORD2
+GetCurrent			KEYWORD2
+GetVoltage			KEYWORD2
