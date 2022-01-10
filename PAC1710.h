@@ -67,6 +67,12 @@ class PAC1710 {
     void SetAveraging(Averaging voltage, Averaging current);
 
     /**
+     * @brief Enter the standby state
+     * Disables averaging and enters standby state
+     */
+    void SetStandby(bool standby);
+
+    /**
      * @brief Triggers a read on the PAC1710 hardware
      * This call is necessary before accessing the power, current or voltage
      */
@@ -108,6 +114,7 @@ class PAC1710 {
     SenseScale _ss = SS_80MV;  // 80mV sense scale, as per datasheet
     byte _samplingU = 0x2u, _samplingI = 0x5u;  // 10ms voltage, 80ms current, as per datasheet.
     Averaging _avgU = AVG_NONE, _avgI = AVG_NONE; // No averaging, as per datasheet.
+    bool _inStandby = false;
 
     int16_t _currentRatio;
     uint16_t _voltageRatio, _powerRatio;

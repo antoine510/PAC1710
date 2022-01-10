@@ -37,15 +37,27 @@ void PAC1710::SetAveraging(Averaging voltage, Averaging current) {
 	writeConfigRegisters();
 }
 
+void PAC1710::SetStandby(bool standby) {
+	_inStandby = standby;
+	writeByte(0x00, _inStandby ? 0x03 : 0x00);
+	writeConfigRegisters();
+}
+
 void PAC1710::ReadOnce(ReadSchedule schedule) {
+	if(_inStandby) writeByte(0x02, 0x00);	// Write to one-shot
 	if(schedule & READ_POWER) _powerRatio = (readByte(0x15) << 8u) | readByte(0x16);
 	if(schedule & READ_CURRENT) _currentRatio = (int16_t)((readByte(0x0d) << 8u) | readByte(0x0e)) >> 4;
 	if(schedule & READ_VOLTAGE) _voltageRatio = (readByte(0x11) << 3u) | (readByte(0x12) >> 5u);
 }
 
 void PAC1710::writeConfigRegisters() {
-	writeByte(0x0a, (_samplingU << 2) | _avgU);
-	writeByte(0x0b, (_samplingI << 4) | (_avgI << 2) | _ss);
+	byte avgU = _avgU, avgI = _avgI;
+	if(_inStandby) {
+		avgU = AVG_NONE;
+		avgI = AVG_NONE;
+	}
+	writeByte(0x0a, (_samplingU << 2) | avgU);
+	writeByte(0x0b, (_samplingI << 4) | (avgI << 2) | _ss);
 }
 
 uint8_t PAC1710::readByte(uint8_t address) {
