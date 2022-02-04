@@ -1,9 +1,8 @@
 #include "PAC1710.h"
 #include <Wire.h>
 
-void PAC1710::Init(SenseScale ss, float senseMilliOhm) {
+void PAC1710::SetSenseScale(SenseScale ss) {
 	_ss = ss;
-	_fsc = (float)(10 * (1u << _ss)) / senseMilliOhm;
 	writeConfigRegisters();
 }
 
@@ -47,10 +46,10 @@ void PAC1710::ReadOnce(ReadSchedule schedule) {
 	if(_inStandby) writeByte(0x02, 0x00);	// Write to one-shot
 	if(schedule & READ_POWER) _powerRatio = (readByte(0x15) << 8u) | readByte(0x16);
 	if(schedule & READ_CURRENT) _currentRatio = (int16_t)((readByte(0x0d) << 8u) | readByte(0x0e)) >> 4;
-	if(schedule & READ_VOLTAGE) _voltageRatio = (readByte(0x11) << 3u) | (readByte(0x12) >> 5u);
+	if(schedule & READ_VOLTAGE) _voltageRatio = (readByte(0x11) << 3u) | readByte(0x12) / 32;
 }
 
-void PAC1710::writeConfigRegisters() {
+void PAC1710::writeConfigRegisters() const {
 	byte avgU = _avgU, avgI = _avgI;
 	if(_inStandby) {
 		avgU = AVG_NONE;
@@ -60,7 +59,7 @@ void PAC1710::writeConfigRegisters() {
 	writeByte(0x0b, (_samplingI << 4) | (avgI << 2) | _ss);
 }
 
-uint8_t PAC1710::readByte(uint8_t address) {
+uint8_t PAC1710::readByte(uint8_t address) const {
 	Wire.beginTransmission(i2cAddr);
 	Wire.write(address);
 	Wire.endTransmission();
@@ -68,7 +67,7 @@ uint8_t PAC1710::readByte(uint8_t address) {
 	return (uint8_t)Wire.read();
 }
 
-void PAC1710::writeByte(uint8_t address, uint8_t value) {
+void PAC1710::writeByte(uint8_t address, uint8_t value) const {
 	Wire.beginTransmission(i2cAddr);
 	Wire.write(address);
 	Wire.write(value);

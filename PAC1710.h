@@ -39,15 +39,72 @@ class PAC1710 {
       AVG_8     = 3
     };
 
+    template<byte senseMilliOhm, SenseScale ss>
+    class ValueReader {
+    public:
+      /**
+       * @brief Get measured power in watts
+       *
+       * @return float Power in watts
+       */
+      static float GetPower(const PAC1710& pac) { return pac._powerRatio * _powerScale; }
+
+      /**
+       * @brief Get Power as integer (for performance)
+       *
+       * @return unsigned Power in deciWatts
+       */
+      static unsigned GetPowerI(const PAC1710& pac) { return pac._powerRatio * _powerIScale; }
+
+      /**
+       * @brief Get measured current in amps
+       *
+       * @return float Current in amps
+       */
+      static float GetCurrent(const PAC1710& pac) { return pac._currentRatio * _currentScale; }
+
+      /**
+       * @brief Get Current as integer (for performance)
+       *
+       * @return int Current in milliamps
+       */
+      static int GetCurrentI(const PAC1710& pac) { return pac._currentRatio * _currentIScale; }
+
+      /**
+       * @brief Get measured voltage in volts
+       *
+       * @return float Voltage in volts
+       */
+      static float GetVoltage(const PAC1710& pac) { return pac._voltageRatio * _voltageScale; }
+
+      /**
+       * @brief Get Voltage as integer (for performance)
+       *
+       * @return unsigned Voltage in millivolts
+       */
+      static unsigned GetVoltageI(const PAC1710& pac) { return pac._voltageRatio * _voltageIScale; }
+
+    private:
+      static constexpr float _fsc = 10.f * (1u << ss) / senseMilliOhm;
+      static constexpr float _fsv = 40.f * 2047 / 2048;
+
+      static constexpr float _powerScale = _fsc * _fsv / 65535;
+      static constexpr float _currentScale = _fsc / 2047;
+      static constexpr float _voltageScale = _fsv / 2047;
+
+      static constexpr float _powerIScale = _powerScale * 10;
+      static constexpr float _currentIScale = _currentScale * 1000;
+      static constexpr float _voltageIScale = _voltageScale * 1000;
+    };
+
     /**
-     * @brief Initializes the PAC1710 module.
+     * @brief Sets the sense scale for the module
      * The sense scale has to be divided by the sense resistor value to
      * get the maximum current. Choose as small a sense scale as possible.
-     * 
+     *
      * @param ss The sense scale to use
-     * @param senseMilliOhm The current measuring resistor value in milliohms
      */
-    void Init(SenseScale ss, float senseMilliOhm);
+    void SetSenseScale(SenseScale ss);
 
     /**
      * @brief Sets the sampling time for voltage and current
@@ -78,39 +135,17 @@ class PAC1710 {
      */
     void ReadOnce(ReadSchedule schedule = READ_ALL);
 
-    /**
-     * @brief Get measured power in watts
-     * FSV * 1/65535 factored in as 0.00061
-     * 
-     * @return float Power in watts
-     */
-    float GetPower() { return _powerRatio * 0.00061f * _fsc; }
-
-    /**
-     * @brief Get measured current in amps
-     * 1/2047 factored in as 0.00048852
-     * 
-     * @return float Current in amps
-     */
-    float GetCurrent() { return _currentRatio * _fsc * 0.00048852f; }
-
-    /**
-     * @brief Get measured voltage in volts
-     * FSV * 1/2047 factored in as 0.01953125
-     * 
-     * @return float Voltage in volts
-     */
-    float GetVoltage() { return _voltageRatio * 0.01953125f; }
-    
   private:
+    template<byte senseMilliOhm, SenseScale ss>
+    friend class ValueReader;
+
     static constexpr uint8_t i2cAddr = 0x4c;
 
-    void writeConfigRegisters();
+    void writeConfigRegisters() const;
 
-    uint8_t readByte(uint8_t address);
-    void writeByte(uint8_t address, uint8_t value);
+    uint8_t readByte(uint8_t address) const;
+    void writeByte(uint8_t address, uint8_t value) const;
 
-    float _fsc;
     SenseScale _ss = SS_80MV;  // 80mV sense scale, as per datasheet
     byte _samplingU = 0x2u, _samplingI = 0x5u;  // 10ms voltage, 80ms current, as per datasheet.
     Averaging _avgU = AVG_NONE, _avgI = AVG_NONE; // No averaging, as per datasheet.
